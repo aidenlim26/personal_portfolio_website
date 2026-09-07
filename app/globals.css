@@ -1,56 +1,62 @@
 @import "tailwindcss";
 
+/* ---------------------------------------------------------------------------
+   Tokens
+
+   The palette is sampled, not picked. --ice is rink ice, --ink and --rink are
+   the boards behind it, --ochre is the gold vase in "A riot of blossoms" and
+   --moss the coastal ridge in "Peaceful homeland" — both paintings appear
+   full-bleed further down this page.
+
+   Every ratio below is measured against --ice unless noted.
+--------------------------------------------------------------------------- */
 @theme {
-  /* Surfaces — base matches the Dot Border Button iframe so the CTA blends in */
-  --color-ink: #111318;
-  --color-ink-soft: #14171e;
-  --color-surface: #171a21;
-  --color-surface-2: #1c2029;
+  --color-ice: #e9edef;      /* page ground */
+  --color-ink: #171c21;      /* body text — 14.56:1 */
+  --color-surface: #ffffff;  /* raised panels; the Timelit panel only */
+  --color-rink: #1e4c74;     /* rules, marginalia — 7.61:1 */
+  --color-ochre: #8a6220;    /* links, focus ring — 4.63:1 (brief's #B8862F was 2.75:1) */
+  --color-moss: #46604e;     /* secondary accent — 5.86:1 */
 
-  /* Text — all values verified ≥4.5:1 against --color-ink */
-  --color-fg: #e9ecf2; /* 15.9:1 */
-  --color-muted: #94a3b8; /*  7.3:1 */
-  --color-faint: #7a8699; /*  5.1:1 */
+  --font-display: var(--font-newsreader), Georgia, "Times New Roman", serif;
+  --font-sans: var(--font-archivo), ui-sans-serif, system-ui, sans-serif;
+  --font-mono: var(--font-jetbrains-mono), ui-monospace, "SF Mono", monospace;
+}
 
-  /* Hairlines */
-  --color-border: rgba(255, 255, 255, 0.08);
-  --color-border-strong: rgba(255, 255, 255, 0.16);
-
-  /* Accents — sampled from the Timelit app icon gradient */
-  --color-cyan-accent: #22d3ee; /* 10.1:1 */
-  --color-violet-accent: #a855f7; /*  4.8:1 */
-  --color-indigo-accent: #25358b; /* the button's own hover fill */
-
-  --font-sans: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
-  --font-display: var(--font-space-grotesk), var(--font-inter), sans-serif;
-  --font-mono: var(--font-jetbrains-mono), ui-monospace, monospace;
+/* Panel-only values. These exist nowhere but inside the hero's order book,
+   where the ground is --ink rather than --ice. */
+:root {
+  --book-figure: #c9d4da; /* 11.36:1 on --ink */
+  --book-label: #8fa3b1;  /*  6.57:1 on --ink */
+  --book-mark: #d4a247;   /*  7.40:1 on --ink */
+  --rule: color-mix(in srgb, var(--color-rink) 20%, transparent);
 }
 
 @layer base {
   html {
+    color-scheme: light;
+    background-color: var(--color-ice);
     scroll-behavior: smooth;
-    /* clears the fixed header when jumping to an anchor */
-    scroll-padding-top: 5.5rem;
-    background-color: var(--color-ink);
-    color-scheme: dark;
+    scroll-padding-top: 2rem;
   }
 
   body {
-    background-color: var(--color-ink);
-    color: var(--color-fg);
+    background-color: var(--color-ice);
+    color: var(--color-ink);
     font-family: var(--font-sans);
+    font-size: 1.0625rem; /* 17px — the scale's base */
+    line-height: 1.6;
     -webkit-font-smoothing: antialiased;
   }
 
-  ::selection {
-    background-color: color-mix(in srgb, var(--color-violet-accent) 40%, transparent);
-    color: #fff;
+  /* Visible on every interactive element. Never suppressed. */
+  :focus-visible {
+    outline: 2px solid var(--color-ochre);
+    outline-offset: 2px;
   }
 
-  :focus-visible {
-    outline: 2px solid var(--color-cyan-accent);
-    outline-offset: 3px;
-    border-radius: 2px;
+  ::selection {
+    background-color: color-mix(in srgb, var(--color-ochre) 26%, transparent);
   }
 
   @media (prefers-reduced-motion: reduce) {
@@ -60,53 +66,203 @@
   }
 }
 
+@layer components {
+  /* -------------------------------------------------------------------------
+     Grid
+
+     12 columns, asymmetric, left-aligned. Content sits in 1–7; the marginalia
+     rail sits in 9–12 and carries every date, role, institution and
+     verification link that would otherwise become a middle-dot meta string.
+     Below `md` the whole thing is one column and the rail falls, in source
+     order, directly beneath its heading.
+  ------------------------------------------------------------------------- */
+  .page-grid {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: 0;
+    width: 100%;
+    max-width: 78rem;
+    margin-inline: auto;
+    padding-inline: clamp(1.25rem, 5vw, 3.5rem);
+  }
+
+  @media (width >= 48rem) {
+    .page-grid {
+      grid-template-columns: repeat(12, minmax(0, 1fr));
+      column-gap: 1.5rem;
+    }
+
+    .col-head {
+      grid-column: 1 / 8;
+      grid-row: 1;
+    }
+    .col-rail {
+      grid-column: 9 / 13;
+      grid-row: 1 / span 2;
+    }
+    .col-body {
+      grid-column: 1 / 8;
+      grid-row: 2;
+    }
+    .col-full {
+      grid-column: 1 / 13;
+    }
+  }
+
+  /* -------------------------------------------------------------------------
+     Section rhythm
+
+     Exactly one rule owns vertical padding on a section, so no `.section` /
+     `.hero` pair can cancel the other out. The hero is a separate element and
+     never carries `.section`. No section ever gets a min-height.
+
+     `max()` floors the brief's flat 10vh, which collapses to ~60px on a short
+     laptop viewport and reads as a mistake rather than as space.
+  ------------------------------------------------------------------------- */
+  .section {
+    padding-block: max(10vh, 5rem);
+    border-top: 1px solid var(--rule);
+  }
+
+  .section:first-of-type {
+    border-top: 0;
+  }
+
+  /* Type scale — modular, ratio 1.25, base 17px on a browser-default root.
+     h1 and h2 are fluid between the scale's own steps so 61px doesn't break
+     at 375px; the endpoints are exactly the values the scale gives. */
+  .h1 {
+    font-family: var(--font-display);
+    font-weight: 400;
+    font-size: clamp(2.441rem, 1.6rem + 3.6vw, 3.815rem);
+    line-height: 1.02;
+    letter-spacing: -0.015em;
+    text-wrap: balance;
+  }
+
+  .h2 {
+    font-family: var(--font-display);
+    font-weight: 400;
+    font-size: clamp(1.953rem, 1.45rem + 2.1vw, 2.441rem);
+    line-height: 1.05;
+    letter-spacing: -0.015em;
+  }
+
+  .h3 {
+    font-family: var(--font-sans);
+    font-weight: 600;
+    font-size: 1.563rem;
+    line-height: 1.2;
+    letter-spacing: -0.005em;
+  }
+
+  .prose-body {
+    max-width: 68ch;
+    font-size: 1.0625rem;
+    line-height: 1.6;
+    text-wrap: pretty;
+  }
+
+  .prose-body + .prose-body {
+    margin-top: 1.1em;
+  }
+
+  /* -------------------------------------------------------------------------
+     Marginalia rail
+  ------------------------------------------------------------------------- */
+  .rail {
+    display: flex;
+    flex-direction: column;
+    gap: 0.85rem;
+    margin-top: 1.75rem;
+    padding-top: 1.1rem;
+    border-top: 1px solid var(--rule);
+    font-size: 0.875rem;
+    line-height: 1.45;
+    color: var(--color-rink);
+    text-wrap: pretty;
+  }
+
+  @media (width >= 48rem) {
+    .rail {
+      margin-top: 0.65rem;
+      padding-top: 0;
+      border-top: 0;
+    }
+  }
+
+  .rail-item {
+    margin: 0;
+  }
+
+  /* -------------------------------------------------------------------------
+     Links — underlined, and that is sufficient. No arrows appended anywhere.
+  ------------------------------------------------------------------------- */
+  .link {
+    color: var(--color-ochre);
+    text-decoration-line: underline;
+    text-decoration-thickness: 1px;
+    text-underline-offset: 0.2em;
+    transition: text-decoration-thickness 150ms ease;
+  }
+
+  .link:hover {
+    text-decoration-thickness: 2px;
+  }
+
+  .link-quiet {
+    color: inherit;
+    text-decoration-line: underline;
+    text-decoration-color: var(--rule);
+    text-decoration-thickness: 1px;
+    text-underline-offset: 0.2em;
+    transition:
+      text-decoration-thickness 150ms ease,
+      text-decoration-color 150ms ease;
+  }
+
+  .link-quiet:hover {
+    text-decoration-thickness: 2px;
+    text-decoration-color: var(--color-ochre);
+  }
+}
+
 @layer utilities {
-  /* Scroll reveal — 12px rise over 400ms, matching the "subtle" motion tier */
-  .reveal {
-    opacity: 0;
+  /* -------------------------------------------------------------------------
+     Motion — the entire budget is in this block.
+
+     1. hero panels, once on load
+     2. stats count-up (JS, in components/stats.tsx)
+     3. painting wipe, once on entry
+     4. user-triggered: accordion, link underline, focus ring
+
+     `backwards` fill means the hidden state lives only inside the keyframes:
+     if animations never run the element's resting state is simply visible.
+     Only transform, opacity and clip-path are animated.
+  ------------------------------------------------------------------------- */
+  .panel-in {
+    animation: wipe-up 620ms cubic-bezier(0.22, 1, 0.36, 1) backwards;
+    animation-delay: var(--panel-delay, 0ms);
   }
 
-  .reveal[data-visible="true"] {
-    animation: reveal-up 400ms cubic-bezier(0.22, 1, 0.36, 1) forwards;
-    animation-delay: var(--reveal-delay, 0ms);
+  .wipe-in[data-shown="true"] {
+    animation: wipe-up 700ms cubic-bezier(0.22, 1, 0.36, 1) backwards;
   }
 
-  @keyframes reveal-up {
+  @keyframes wipe-up {
     from {
-      opacity: 0;
-      transform: translateY(12px);
-    }
-    to {
-      opacity: 1;
-      transform: none;
+      clip-path: inset(100% 0 0 0);
     }
   }
 
-  /* Never hide content from users who opt out of motion, or when JS is off */
   @media (prefers-reduced-motion: reduce) {
-    .reveal {
-      opacity: 1;
-    }
-    .reveal[data-visible="true"] {
+    .panel-in,
+    .wipe-in[data-shown="true"] {
       animation: none;
     }
   }
 
-  /* Faint engineering grid used behind the hero */
-  .bg-grid {
-    background-image:
-      linear-gradient(to right, rgba(255, 255, 255, 0.035) 1px, transparent 1px),
-      linear-gradient(to bottom, rgba(255, 255, 255, 0.035) 1px, transparent 1px);
-    background-size: 72px 72px;
-  }
-
-  .text-gradient {
-    background-image: linear-gradient(
-      100deg,
-      var(--color-cyan-accent),
-      var(--color-violet-accent)
-    );
-    background-clip: text;
-    color: transparent;
+  .tnum {
+    font-variant-numeric: tabular-nums;
   }
 }

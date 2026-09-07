@@ -1,51 +1,76 @@
-import Reveal from "@/components/reveal";
+"use client";
+
+import { useState } from "react";
+import { RailLines } from "@/components/rail";
 import Section from "@/components/section";
 import { aiClub } from "@/lib/content";
 
+/**
+ * A plain accordion — no panel, no card, no border box. The first item is open
+ * on load and is the scoliosis programme rather than the founding story: in a
+ * sixty-second read, the most specific thing has to be the thing that is
+ * already showing.
+ */
 export default function AiClub() {
+  const [open, setOpen] = useState<ReadonlySet<number>>(new Set([0]));
+
+  const toggle = (index: number) =>
+    setOpen((current) => {
+      const next = new Set(current);
+      if (!next.delete(index)) next.add(index);
+      return next;
+    });
+
   return (
     <Section
       id="ai-club"
-      index="04"
-      eyebrow="Leadership Case Study"
-      title="AI Club"
-      lead={
-        <>
-          {aiClub.role}
-          <span className="text-border-strong px-3" aria-hidden="true">
-            /
-          </span>
-          <span className="whitespace-nowrap">{aiClub.period}</span>
-        </>
-      }
+      title={aiClub.heading}
+      rail={<RailLines lines={aiClub.rail} />}
     >
-      <ol className="border-border mt-14 border-l">
-        {aiClub.pillars.map((pillar, index) => (
-          <Reveal
-            as="li"
-            key={pillar.title}
-            delay={index * 70}
-            className="group relative pb-12 pl-8 last:pb-0 sm:pl-12"
-          >
-            <span
-              aria-hidden="true"
-              className="bg-ink border-border-strong absolute top-1.5 -left-[5px] block h-2.5 w-2.5 rounded-full border"
-            />
-            <span
-              aria-hidden="true"
-              className="text-faint font-mono text-[0.7rem] tracking-[0.18em]"
-            >
-              {String(index + 1).padStart(2, "0")}
-            </span>
-            <h3 className="font-display mt-2 text-xl font-medium tracking-tight sm:text-2xl">
-              {pillar.title}
-            </h3>
-            <p className="text-muted mt-3 max-w-2xl text-sm leading-relaxed sm:text-base">
-              {pillar.body}
-            </p>
-          </Reveal>
-        ))}
-      </ol>
+      <p className="prose-body">{aiClub.lead}</p>
+
+      <div className="mt-10 border-t border-[var(--rule)]">
+        {aiClub.items.map((item, index) => {
+          const isOpen = open.has(index);
+          const panelId = `ai-club-panel-${index}`;
+
+          return (
+            <div key={item.title} className="border-b border-[var(--rule)]">
+              <h3>
+                <button
+                  type="button"
+                  onClick={() => toggle(index)}
+                  aria-expanded={isOpen}
+                  aria-controls={panelId}
+                  className="flex w-full cursor-pointer items-baseline justify-between gap-6 py-5 text-left h3"
+                >
+                  {item.title}
+                  <span
+                    aria-hidden="true"
+                    className="shrink-0 text-[1.25rem] leading-none font-normal text-rink"
+                  >
+                    {isOpen ? "−" : "+"}
+                  </span>
+                </button>
+              </h3>
+
+              <div
+                id={panelId}
+                inert={!isOpen}
+                style={{ gridTemplateRows: isOpen ? "1fr" : "0fr" }}
+                className={
+                  "grid transition-[grid-template-rows,opacity] duration-[240ms] ease-out motion-reduce:transition-none " +
+                  (isOpen ? "opacity-100" : "opacity-0")
+                }
+              >
+                <div className="overflow-hidden">
+                  <p className="prose-body pb-6">{item.body}</p>
+                </div>
+              </div>
+            </div>
+          );
+        })}
+      </div>
     </Section>
   );
 }
