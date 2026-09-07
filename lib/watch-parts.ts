@@ -94,8 +94,8 @@ export { CAMERA };
    from part to part.
 -------------------------------------------------------------------------- */
 
-/** Scroll distance for one sub-block, in vh. About two trackpad swipes. */
-export const BLOCK_VH = 150;
+/** Scroll distance for one sub-block, in vh. Several unhurried trackpad swipes. */
+export const BLOCK_VH = 300;
 /** Explode and reassemble ramps, in blocks. */
 const EXPLODE = 0.6;
 /** Camera travel from one part to the next, in blocks. */

@@ -50,12 +50,12 @@ cream fills so parts occlude, ink crease edges, an inverted hull for silhouettes
 materials, no textures, no post-processing. The part in focus is outlined in ochre.
 
 - Native scroll only. The stage is `position: sticky` inside a container whose height is derived
-  from the timeline in `lib/watch-parts.ts` (100vh stage plus the travel; currently 2880vh of
+  from the timeline in `lib/watch-parts.ts` (100vh stage plus the travel; currently 5760vh of
   travel). Scene state is a pure function of scroll position (`cameraState`, `explodeAmount`,
   `focusWeights`, `blockStates`). The drawn progress chases the scroll progress with a ~140ms
   exponential ease so stepped wheel input glides; the frame loop runs only until the two settle.
   Nothing snaps and nothing plays on its own.
-- The scroll is measured in blocks of 150vh, one per caption sub-block: an explode ramp, then for
+- The scroll is measured in blocks of 300vh, one per caption sub-block: an explode ramp, then for
   each stop a camera move and one block per sub-block, then a move back to overview and reassembly.
   Focus is a plateau across a stop's hold with crossfading ramps, so the camera glides straight
   from part to part.
