@@ -2,6 +2,7 @@ import AiClub from "@/components/ai-club";
 import Credentials from "@/components/credentials";
 import EServices from "@/components/e-services";
 import Hero from "@/components/hero";
+import Overture from "@/components/overture";
 import Recognition from "@/components/recognition";
 import SiteFooter from "@/components/site-footer";
 import SiteHeader from "@/components/site-header";
@@ -22,7 +23,7 @@ export default function Home() {
 
       <main id="main">
         <Hero />
-        {/* Phase 2 inserts the watch scene here. */}
+        <Overture />
         <AiClub />
         <Timelit />
         <Simulator />

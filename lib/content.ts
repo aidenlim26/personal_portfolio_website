@@ -141,6 +141,41 @@ export const credentials = {
   ],
 } as const;
 
+export const overture = {
+  label: "An exploded automatic watch movement",
+  skip: "Skip the scene",
+  stops: [
+    {
+      part: "Rotor",
+      section: "AI Club",
+      href: "#ai-club",
+      sentence: "I founded the AI Club at my school in February 2026. It has 81 members.",
+      link: "Read about the AI Club",
+    },
+    {
+      part: "Balance wheel",
+      section: "Timelit",
+      href: "#timelit",
+      sentence: "An AI scheduling assistant I co-founded in June 2025.",
+      link: "Read about Timelit",
+    },
+    {
+      part: "Gear train",
+      section: "HFT Trading Simulator",
+      href: "#simulator",
+      sentence: "Fifteen bots trading against each other through a matching engine I wrote.",
+      link: "Read about the simulator",
+    },
+    {
+      part: "Mainspring barrel",
+      section: "E-Services Group",
+      href: "#e-services",
+      sentence: "An internal chatbot I built in Shenzhen and deployed on WeCom in the summer of 2025.",
+      link: "Read about E-Services Group",
+    },
+  ],
+} as const;
+
 export const contact = {
   heading: "Contact",
 } as const;

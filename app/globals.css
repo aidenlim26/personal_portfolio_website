@@ -57,6 +57,12 @@
     html {
       scroll-behavior: auto;
     }
+    *,
+    ::before,
+    ::after {
+      transition: none !important;
+      animation: none !important;
+    }
   }
 }
 
@@ -206,6 +212,124 @@
     height: 4rem;
     border-radius: 4px;
     overflow: hidden;
+  }
+}
+
+@layer components {
+  /* -------------------------------------------------------------------------
+     Overture
+
+     Static mode is the server-rendered default: the drawing, then the four
+     captions as a plain list. Scene mode is switched on by the client only on
+     a wide viewport with WebGL and no reduced-motion preference. Native
+     scroll throughout: the stage is sticky, nothing is snapped or eased.
+  ------------------------------------------------------------------------- */
+  .overture {
+    position: relative;
+  }
+
+  .overture-stage {
+    position: relative;
+  }
+
+  .overture-skip {
+    position: absolute;
+    top: 1.25rem;
+    right: clamp(1.25rem, 5vw, 3.5rem);
+    z-index: 3;
+    font-size: 0.875rem;
+  }
+
+  .overture-frame {
+    max-width: 78rem;
+    margin-inline: auto;
+    padding-inline: clamp(1.25rem, 5vw, 3.5rem);
+    padding-block: 3.5rem 1rem;
+  }
+
+  .overture-frame svg {
+    display: block;
+    width: 100%;
+    max-width: 44rem;
+    height: auto;
+  }
+
+  .overture-captions {
+    list-style: none;
+    margin: 0 auto;
+    max-width: 78rem;
+    padding: 1rem clamp(1.25rem, 5vw, 3.5rem) 4rem;
+    display: grid;
+    gap: 1.5rem 2rem;
+    grid-template-columns: repeat(auto-fit, minmax(14rem, 1fr));
+    font-size: 0.875rem;
+    line-height: 1.45;
+  }
+
+  .overture-caption p {
+    margin: 0;
+  }
+
+  .overture-part {
+    font-weight: 600;
+  }
+
+  .overture-section {
+    color: var(--color-muted);
+  }
+
+  .overture-sentence {
+    margin-top: 0.35rem;
+    max-width: 30ch;
+    text-wrap: pretty;
+  }
+
+  .overture-caption a {
+    display: inline-block;
+    margin-top: 0.35rem;
+  }
+
+  .overture-canvas {
+    position: absolute;
+    inset: 0;
+    display: block;
+    width: 100%;
+    height: 100%;
+  }
+
+  .overture[data-mode="scene"] {
+    height: 300vh;
+  }
+
+  .overture[data-mode="scene"] .overture-stage {
+    position: sticky;
+    top: 0;
+    height: 100vh;
+    overflow: hidden;
+  }
+
+  .overture[data-mode="scene"] .overture-frame {
+    display: none;
+  }
+
+  .overture[data-mode="scene"] .overture-captions {
+    display: block;
+    margin: 0;
+    padding: 0;
+    max-width: none;
+  }
+
+  .overture[data-mode="scene"] .overture-caption {
+    position: absolute;
+    top: 0;
+    left: 0;
+    z-index: 2;
+    width: 19rem;
+    opacity: 0;
+  }
+
+  .overture[data-mode="scene"] .overture-caption[data-active="false"] {
+    pointer-events: none;
   }
 }
 

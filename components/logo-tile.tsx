@@ -12,6 +12,7 @@ export default function LogoTile({ src, alt }: { src: string; alt: string }) {
       alt={alt}
       width={128}
       height={128}
+      quality={75}
       className="logo-tile"
     />
   );

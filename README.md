@@ -16,6 +16,10 @@ npm run build
 | `lib/content.ts` | All copy and data for every section — the single place to edit content. |
 | `app/globals.css` | Design tokens (`@theme`), the 12-column grid, the type scale. |
 | `components/` | One component per section, plus the `section.tsx` / `rail.tsx` / `logo-tile.tsx` primitives. |
+| `lib/watch-parts.ts` | The watch movement as numbers: part sizes, stop positions, the explode curve and the camera path. Shared by the SVG frame and the 3D scene. |
+| `components/overture.tsx` | The overture container. Server-renders the static frame and the four captions; the client swaps in the scene when it can. |
+| `components/overture-frame.tsx` | The static exploded-view drawing, an isometric SVG generated from `lib/watch-parts.ts`. |
+| `components/watch-scene.ts` | The Three.js scene. Loaded on demand, only on a wide viewport with WebGL and no reduced-motion preference. |
 | `app/opengraph-image.tsx` | The link-preview card, generated at build time from `lib/content.ts`. |
 | `app/fonts/` | Glyph subsets of Newsreader and Archivo used only by the link-preview card. |
 | `app/icon.svg` | Favicon. |
@@ -39,7 +43,25 @@ Rules the build holds to:
   section. Nothing else is illustrated.
 - Nothing animates on load or scroll. The only motion is the link underline and the focus ring.
 
+## The overture
+
+A scroll-driven exploded watch movement sits directly below the hero. It is a line drawing in 3D:
+cream fills so parts occlude, ink crease edges, an inverted hull for silhouettes. No lights, no
+materials, no textures, no post-processing. The part in focus is outlined in ochre.
+
+- Native scroll only. The stage is `position: sticky` inside a 300vh container; scene state is a
+  pure function of scroll position (`cameraState`, `explodeAmount`, `focusWeights`). Nothing eases
+  over time and nothing snaps.
+- Four stops: rotor → AI Club, balance wheel → Timelit, gear train → HFT Trading Simulator,
+  mainspring barrel → E-Services Group. Captions are real DOM text tracked to each part's projected
+  position; a caption link that receives keyboard focus scrolls its stop into view.
+- Fallbacks share one path: reduced motion, no WebGL, a lost context, JavaScript off, and viewports
+  under 48rem all get the server-rendered SVG frame with the captions listed beneath it.
+- Device pixel ratio is capped at 2, frames are drawn only on scroll and resize while the container
+  is on screen, and everything is disposed on unmount.
+
 ## Things to know before changing it
 
-- Phase 2 inserts the watch scene directly after the hero. `app/page.tsx` marks the slot.
+- `three` is the only runtime dependency beyond Next and React; `@types/three` is dev-only.
+- `images.qualities` in `next.config.ts` must list every `quality` value used by `next/image`.
 - The five painting and hockey photographs still in `public/images/` are not referenced anywhere.
