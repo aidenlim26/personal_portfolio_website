@@ -41,7 +41,8 @@ Rules the build holds to:
 - No arrows appended to link text. Links are ink, underlined.
 - Only two images on the site: the AI Club logo and the Timelit logo, each a 64px tile inside its own
   section. Nothing else is illustrated.
-- Nothing animates on load or scroll. The only motion is the link underline and the focus ring.
+- Nothing animates on load. The only motion is the link underline, the focus ring, and the
+  overture below the hero, which follows the user's own scrolling and never plays on its own.
 
 ## The overture
 
@@ -49,16 +50,18 @@ A scroll-driven exploded watch movement sits directly below the hero. It is a li
 cream fills so parts occlude, ink crease edges, an inverted hull for silhouettes. No lights, no
 materials, no textures, no post-processing. The part in focus is outlined in ochre.
 
-- Native scroll only. The stage is `position: sticky` inside a 300vh container; scene state is a
-  pure function of scroll position (`cameraState`, `explodeAmount`, `focusWeights`). Nothing eases
-  over time and nothing snaps.
+- Native scroll only. The stage is `position: sticky` inside a 900vh container (`--overture-length`
+  in `globals.css`), so the whole sequence takes 800vh of travel; scene state is a pure function of
+  scroll position (`cameraState`, `explodeAmount`, `focusWeights`). The drawn progress chases the
+  scroll progress with a ~140ms exponential ease so stepped wheel input glides; the frame loop runs
+  only until the two settle. Nothing snaps and nothing plays on its own.
 - Four stops: rotor → AI Club, balance wheel → Timelit, gear train → HFT Trading Simulator,
   mainspring barrel → E-Services Group. Captions are real DOM text tracked to each part's projected
   position; a caption link that receives keyboard focus scrolls its stop into view.
 - Fallbacks share one path: reduced motion, no WebGL, a lost context, JavaScript off, and viewports
   under 48rem all get the server-rendered SVG frame with the captions listed beneath it.
-- Device pixel ratio is capped at 2, frames are drawn only on scroll and resize while the container
-  is on screen, and everything is disposed on unmount.
+- Device pixel ratio is capped at 2, frames are drawn only on scroll, on resize and while the ease
+  is settling, and only while the container is on screen. Everything is disposed on unmount.
 
 ## Things to know before changing it
 

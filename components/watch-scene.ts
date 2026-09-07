@@ -26,9 +26,11 @@ import {
  * whatever is behind it) plus ink crease edges, plus an inverted hull for the
  * silhouette. No lights, no materials beyond MeshBasicMaterial, no textures.
  *
- * The render loop is event-driven: a frame is drawn on scroll and resize,
- * and only while the container is on screen. Scene state is a pure function
- * of scroll progress (see lib/watch-parts.ts); nothing here eases over time.
+ * Scroll position is the source of truth: scene state is a pure function of
+ * progress (see lib/watch-parts.ts). The drawn progress chases the scroll
+ * progress with a short exponential ease (SMOOTHING), so stepped wheel input
+ * glides instead of jumping. The frame loop runs only while the two differ
+ * and the container is on screen; it stops as soon as they settle.
  */
 
 const CREAM = 0xf6f1e7;
@@ -37,6 +39,14 @@ const OCHRE = 0xb8862f;
 const MUTED = 0x645d52;
 /** Outline width as a fraction of camera distance, so it stays about 1.5px. */
 const OUTLINE_PER_DISTANCE = 0.0015;
+/** Time constant of the ease from scroll position to drawn state, seconds. */
+const SMOOTHING = 0.14;
+/** Below this gap the drawn state snaps to the scroll position and the loop stops. */
+const SETTLE = 0.0004;
+/** A gap this long between frames of a running ease means the loop was paused (tab hidden); snap. */
+const SNAP_AFTER = 0.25;
+/** Nominal frame length for the first frame of a new scroll burst, seconds. */
+const NOMINAL_DT = 1 / 60;
 
 export type SceneHandle = { dispose(): void };
 
@@ -315,6 +325,12 @@ export function mountScene({ root, stage, captions, onLost }: MountOptions): Sce
   let height = 1;
   let inView = false;
   let frame = 0;
+  /** Progress currently drawn. Chases progress(). */
+  let shown = 0;
+  /** Timestamp of the previous frame while an ease is running; 0 when settled. */
+  let lastTime = 0;
+  /** Set when the drawn state is stale (mount, resize, off screen): the next frame snaps. */
+  let snap = true;
 
   const progress = () => {
     const rect = root.getBoundingClientRect();
@@ -378,11 +394,26 @@ export function mountScene({ root, stage, captions, onLost }: MountOptions): Sce
     });
   };
 
-  const render = () => {
+  const render = (now: number) => {
     frame = 0;
     if (disposed) return;
-    apply(progress());
+    const target = progress();
+    // A settled loop starts a new burst with one nominal frame of ease, so a
+    // wheel notch after a pause glides. A running loop that stalled (tab
+    // hidden) snaps rather than sweeping through the missed distance.
+    const dt = lastTime ? (now - lastTime) / 1000 : NOMINAL_DT;
+    lastTime = now;
+    if (snap || dt > SNAP_AFTER) {
+      shown = target;
+      snap = false;
+    } else {
+      shown += (target - shown) * (1 - Math.exp(-dt / SMOOTHING));
+      if (Math.abs(target - shown) < SETTLE) shown = target;
+    }
+    apply(shown);
     renderer.render(scene, camera);
+    if (shown !== target) schedule();
+    else lastTime = 0;
   };
 
   const schedule = () => {
@@ -400,7 +431,9 @@ export function mountScene({ root, stage, captions, onLost }: MountOptions): Sce
     camera.updateProjectionMatrix();
     if (frame) cancelAnimationFrame(frame);
     frame = 0;
-    render();
+    // A resize never eases: snap to the current scroll position.
+    snap = true;
+    render(performance.now());
   };
 
   const resizeObserver = new ResizeObserver(resize);
@@ -410,6 +443,8 @@ export function mountScene({ root, stage, captions, onLost }: MountOptions): Sce
     (entries) => {
       inView = entries.some((entry) => entry.isIntersecting);
       if (inView) schedule();
+      // Off screen the drawn state goes stale; the first frame back snaps.
+      else snap = true;
     },
     { threshold: 0 },
   );

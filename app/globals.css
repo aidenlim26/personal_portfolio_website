@@ -222,7 +222,10 @@
      Static mode is the server-rendered default: the drawing, then the four
      captions as a plain list. Scene mode is switched on by the client only on
      a wide viewport with WebGL and no reduced-motion preference. Native
-     scroll throughout: the stage is sticky, nothing is snapped or eased.
+     scroll throughout: the stage is sticky and nothing is snapped. The drawn
+     state trails the scroll position by a short ease, which lives in
+     components/watch-scene.ts. --overture-length sets how much scrolling the
+     whole sequence takes; travel is that minus the 100vh stage.
   ------------------------------------------------------------------------- */
   .overture {
     position: relative;
@@ -298,7 +301,8 @@
   }
 
   .overture[data-mode="scene"] {
-    height: 300vh;
+    --overture-length: 900vh;
+    height: var(--overture-length);
   }
 
   .overture[data-mode="scene"] .overture-stage {
