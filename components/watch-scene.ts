@@ -5,6 +5,7 @@ import {
   STOP_AT,
   STOP_PARTS,
   STOP_RADIUS,
+  blockStates,
   cameraState,
   circlePoints,
   explodeAmount,
@@ -47,6 +48,11 @@ const SETTLE = 0.0004;
 const SNAP_AFTER = 0.25;
 /** Nominal frame length for the first frame of a new scroll burst, seconds. */
 const NOMINAL_DT = 1 / 60;
+/** Gap between a part's projected edge and its caption, and the stage margin captions keep. */
+const CAPTION_GAP = 28;
+const CAPTION_MARGIN = 24;
+
+type Side = "left" | "right";
 
 export type SceneHandle = { dispose(): void };
 
@@ -54,6 +60,8 @@ type MountOptions = {
   root: HTMLElement;
   stage: HTMLElement;
   captions: HTMLElement[];
+  /** Sub-block elements per caption, in scroll order. */
+  blocks: HTMLElement[][];
   onLost: () => void;
 };
 
@@ -119,7 +127,7 @@ function lineFrom(points: Vec2[], y: number, material: THREE.Material) {
   return new THREE.Line(geometry, material);
 }
 
-export function mountScene({ root, stage, captions, onLost }: MountOptions): SceneHandle {
+export function mountScene({ root, stage, captions, blocks, onLost }: MountOptions): SceneHandle {
   let disposed = false;
 
   const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: false, powerPreference: "low-power" });
@@ -331,6 +339,50 @@ export function mountScene({ root, stage, captions, onLost }: MountOptions): Sce
   let lastTime = 0;
   /** Set when the drawn state is stale (mount, resize, off screen): the next frame snaps. */
   let snap = true;
+  /**
+   * Which side of its part each caption sits on. Decided once per stop from
+   * the in-focus framing (see resize), never per frame: deciding it from the
+   * current projection made a caption fit on the right while the camera was
+   * far out and then jump left as it closed in.
+   */
+  let sides: Side[] = STOP_PARTS.map(() => "left");
+
+  /**
+   * Screen-space centre x/y of a part and the projected half-width that a
+   * caption has to clear, for a given camera.
+   */
+  const projectPart = (key: StopPart, e: number, cam: THREE.Camera) => {
+    const c = partCenter(key, e);
+    projected.set(c[0], c[1], c[2]).project(cam);
+    const x = ((projected.x + 1) / 2) * width;
+    const y = ((1 - projected.y) / 2) * height;
+    right.setFromMatrixColumn(cam.matrixWorld, 0);
+    edge.set(c[0], c[1], c[2]).addScaledVector(right, STOP_RADIUS[key]).project(cam);
+    const half = Math.abs(((edge.x + 1) / 2) * width - x);
+    return { x, y, half };
+  };
+
+  const captionLeft = (x: number, half: number, w: number, side: Side) => {
+    const left = side === "right" ? x + half + CAPTION_GAP : x - half - CAPTION_GAP - w;
+    return Math.max(CAPTION_MARGIN, left);
+  };
+
+  const scratchCamera = new THREE.PerspectiveCamera(CAMERA.fov, 1, 0.1, 60);
+
+  /** Side each caption takes, judged where its stop is fully in focus. */
+  const decideSides = () => {
+    scratchCamera.aspect = width / height;
+    scratchCamera.updateProjectionMatrix();
+    sides = STOP_PARTS.map((key, i) => {
+      const cam = cameraState(STOP_AT[i]);
+      scratchCamera.position.set(...cam.position);
+      scratchCamera.lookAt(...cam.target);
+      scratchCamera.updateMatrixWorld();
+      const { x, half } = projectPart(key, 1, scratchCamera);
+      const w = captions[i]?.offsetWidth ?? 0;
+      return x + half + CAPTION_GAP + w <= width - CAPTION_MARGIN ? "right" : "left";
+    });
+  };
 
   const progress = () => {
     const rect = root.getBoundingClientRect();
@@ -374,23 +426,24 @@ export function mountScene({ root, stage, captions, onLost }: MountOptions): Sce
     STOP_PARTS.forEach((key, i) => {
       const el = captions[i];
       if (!el) return;
-      const c = partCenter(key, e);
-      projected.set(c[0], c[1], c[2]).project(camera);
-      const x = ((projected.x + 1) / 2) * width;
-      const y = ((1 - projected.y) / 2) * height;
-      // Projected half-width of the part, so the caption clears its outline.
-      right.setFromMatrixColumn(camera.matrixWorld, 0);
-      edge.set(c[0], c[1], c[2]).addScaledVector(right, STOP_RADIUS[key]).project(camera);
-      const half = Math.abs(((edge.x + 1) / 2) * width - x);
+      const { x, y, half } = projectPart(key, e, camera);
       const w = el.offsetWidth;
       const h = el.offsetHeight;
-      let left = x + half + 28;
-      if (left + w > width - 24) left = x - half - 28 - w;
-      if (left < 24) left = 24;
-      const topPx = clamp(y - h / 2, 24, height - h - 24);
+      const left = captionLeft(x, half, w, sides[i]);
+      const topPx = clamp(y - h / 2, CAPTION_MARGIN, height - h - CAPTION_MARGIN);
       el.style.transform = `translate(${left.toFixed(1)}px, ${topPx.toFixed(1)}px)`;
       el.style.opacity = f[i].toFixed(3);
       el.dataset.active = f[i] > 0.05 ? "true" : "false";
+
+      // Sub-blocks: the current one sits at rest, the previous has slid up
+      // and out, the next waits below.
+      const states = blockStates(p, i);
+      blocks[i]?.forEach((block, j) => {
+        const state = states[j];
+        block.style.transform = `translateY(${(state.offset * 100).toFixed(1)}%)`;
+        block.style.opacity = state.opacity.toFixed(3);
+        block.setAttribute("aria-hidden", state.opacity < 0.5 ? "true" : "false");
+      });
     });
   };
 
@@ -429,6 +482,7 @@ export function mountScene({ root, stage, captions, onLost }: MountOptions): Sce
     renderer.setSize(width, height, false);
     camera.aspect = width / height;
     camera.updateProjectionMatrix();
+    decideSides();
     if (frame) cancelAnimationFrame(frame);
     frame = 0;
     // A resize never eases: snap to the current scroll position.
@@ -487,6 +541,11 @@ export function mountScene({ root, stage, captions, onLost }: MountOptions): Sce
       el.style.transform = "";
       el.style.opacity = "";
       delete el.dataset.active;
+      blocks[i]?.forEach((block) => {
+        block.style.transform = "";
+        block.style.opacity = "";
+        block.removeAttribute("aria-hidden");
+      });
     });
 
     const materials = new Set<THREE.Material>();

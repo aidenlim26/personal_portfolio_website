@@ -16,71 +16,6 @@ export const hero = {
   roles: ["Co-founder at Timelit", "Founder and president of the SISHK AI Club"],
 } as const;
 
-export const aiClub = {
-  heading: "AI Club",
-  logo: {
-    src: "/images/ai-club-logo.jpeg",
-    alt: "AI Club logo",
-  },
-  lead: "I founded the AI Club at Singapore International School Hong Kong in February 2026. It has 81 members.",
-  items: [
-    {
-      title: "Scoliosis screening",
-      body: "I direct a screening programme for primary and secondary students. It uses mskalign Wukong, a radiation-free 4D spine alignment system, and runs in collaboration with HKU AIMed.",
-    },
-    {
-      title: "Running the club",
-      body: "I secured dedicated funding from the school, ran internal workshops, and worked with school leadership on AI literacy across the campus. The technical pipelines we set up are now used by other student organisations.",
-    },
-    {
-      title: "Speakers",
-      body: "I bring in guest speakers from Silicon Valley and Shenzhen, including founders and senior executives. Members hear from people who do the work.",
-    },
-  ],
-  rail: [
-    "February 2026 to present",
-    "Founder and president",
-    "Singapore International School Hong Kong",
-  ],
-} as const;
-
-export const timelit = {
-  heading: "Timelit",
-  logo: {
-    src: "/images/timelit-logo.png",
-    alt: "Timelit logo",
-  },
-  paragraphs: [
-    "Timelit is an AI scheduling assistant. Its agent, Aura, learns when you actually get things done and rearranges the day around that.",
-    "I co-founded Timelit in June 2025. I raised HKD 32,000 in early seed funding and recruited the advisory board. I now run the user-testing programme that decides what we change next.",
-  ],
-  rail: ["June 2025 to present", "Co-founder and chief strategy officer"],
-  url: "https://timelit.base44.app",
-  urlLabel: "timelit.base44.app",
-} as const;
-
-export const simulator = {
-  heading: "HFT Trading Simulator",
-  paragraphs: [
-    "I built the HFT Trading Simulator to practise object-oriented programming, and because I was inspired by quants.",
-    "Fifteen bots trade against each other through a matching engine I wrote. Each runs a different quantitative strategy with its own entry and exit logic. Nothing enters the market from outside.",
-    "Prices come from a hybrid engine. Eighty per cent is real market data and twenty per cent is the bots' own transaction volume. The market moves because they move it.",
-  ],
-  rail: ["Python", "Order book, matching engine, fifteen strategy bots"],
-  repo: "https://github.com/aidenlim26/hft_trading_simulator",
-  repoLabel: "github.com/aidenlim26/hft_trading_simulator",
-} as const;
-
-export const eServices = {
-  heading: "E-Services Group",
-  paragraphs: [
-    "I spent the summer of 2025 in Shenzhen as a management intern at E-Services Group.",
-    "I built an internal chatbot trained on the company's financial records, promotional material and internal documentation. It was deployed on WeCom, where staff already worked.",
-    "It answered most queries in under three seconds. People use an internal tool when it is faster than asking the colleague next to them.",
-  ],
-  rail: ["July to August 2025", "Management intern", "Shenzhen"],
-} as const;
-
 export const recognition = {
   heading: "Recognition",
   items: [
@@ -141,37 +76,96 @@ export const credentials = {
   ],
 } as const;
 
+export type OvertureBlock = { title?: string; text: string };
+export type OvertureLink = { href: string; label: string; external?: boolean };
+
 export const overture = {
   label: "An exploded automatic watch movement",
   skip: "Skip the scene",
+  skipHref: "#recognition",
   stops: [
     {
       part: "Rotor",
       section: "AI Club",
-      href: "#ai-club",
-      sentence: "I founded the AI Club at my school in February 2026. It has 81 members.",
-      link: "Read about the AI Club",
+      blocks: [
+        {
+          title: "Program Leadership & Scale",
+          text: "Spearheading global AI educational programs, scaling membership to 80+ members and securing dedicated institutional funding.",
+        },
+        {
+          title: "Campus & Ecosystem Integration",
+          text: "Partnered directly with school leadership to advance campus-wide AI literacy, hosting internal workshops and cross-school initiatives.",
+        },
+        {
+          title: "Technical Pipelines",
+          text: "Formulated scalable technical architecture and workflows to empower adjacent student organizations and campus communities.",
+        },
+        {
+          title: "Strategic Partnerships",
+          text: "Executed high-impact industry outreach, securing guest speakers across Silicon Valley, Shenzhen tech hubs, tech founders, and C-suite executives.",
+        },
+        {
+          title: "Special Projects",
+          text: "Currently directing the deployment of an AI-driven scoliosis screening initiative across primary and secondary student populations using mskalign\u2122 Wukong\u2014a non-invasive, radiation-free 4D spine alignment system in collaboration with HKU AIMed.",
+        },
+      ],
     },
     {
       part: "Balance wheel",
       section: "Timelit",
-      href: "#timelit",
-      sentence: "An AI scheduling assistant I co-founded in June 2025.",
-      link: "Read about Timelit",
+      link: { href: "https://timelit.base44.app", label: "timelit.base44.app", external: true },
+      blocks: [
+        {
+          text: "Built an AI-powered scheduling and productivity application integrating machine learning models and AI agents to optimise focus blocks and daily user workflows.",
+        },
+        {
+          text: "Raised HKD 32,000 in early seed funding and recruited a high-profile advisory board to guide strategic growth and product development.",
+        },
+        {
+          text: "Developed and executed early user testing programs, driving continuous feature iteration and algorithmic refinement toward public launch.",
+        },
+        {
+          text: "Engineered core AI capabilities to analyse individual work habits, eliminate friction and procrastination, and generate adaptive smart schedules.",
+        },
+      ],
     },
     {
       part: "Gear train",
       section: "HFT Trading Simulator",
-      href: "#simulator",
-      sentence: "Fifteen bots trading against each other through a matching engine I wrote.",
-      link: "Read about the simulator",
+      link: {
+        href: "https://github.com/aidenlim26/hft_trading_simulator",
+        label: "github.com/aidenlim26/hft_trading_simulator",
+        external: true,
+      },
+      blocks: [
+        {
+          text: "Programmed 15 autonomous bots executing distinct quantitative strategies with custom entry/exit logic.",
+        },
+        {
+          text: "Engineered a matching engine where bots trade exclusively with each other.",
+        },
+        {
+          text: "Built a hybrid pricing engine blending 80% real market data with 20% bot transaction volume to simulate real-time price impact.",
+        },
+      ],
     },
     {
       part: "Mainspring barrel",
       section: "E-Services Group",
-      href: "#e-services",
-      sentence: "An internal chatbot I built in Shenzhen and deployed on WeCom in the summer of 2025.",
-      link: "Read about E-Services Group",
+      blocks: [
+        {
+          title: "Custom AI Chatbot Deployment",
+          text: "Independently designed and deployed an enterprise-grade AI chatbot onto enterprise WeCom, trained on internal data\u2014including financial records, promotional materials, and company documentation\u2014under engineering supervision.",
+        },
+        {
+          title: "Security & Performance Optimisation",
+          text: "Consistently delivering high-accuracy responses with average query response times under 3 seconds.",
+        },
+        {
+          title: "Workflow Acceleration",
+          text: "Enhanced cross-departmental operations by accelerating new hire onboarding and streamlining daily internal data retrieval workflows.",
+        },
+      ],
     },
   ],
 } as const;

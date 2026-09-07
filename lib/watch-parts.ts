@@ -7,6 +7,8 @@
  * part is stacked above it. `lift` is how far a part rises when the movement
  * is fully exploded.
  */
+import { overture } from "@/lib/content";
+
 export type Vec2 = readonly [number, number];
 
 export const PARTS = {
@@ -79,10 +81,79 @@ const CAMERA = {
 
 export { CAMERA };
 
-const STOP_WIDTH = 0.11;
+/* --------------------------------------------------------------------------
+   Timeline. The scroll is measured in blocks: one block is the distance over
+   which one caption sub-block is shown. Every segment below is a length in
+   blocks, so lengthening one sub-block lengthens the whole sequence in step.
 
-/** Fraction of the scroll at which each stop is centred. */
-export const STOP_AT = STOP_PARTS.map((_, i) => (i + 0.5) / STOP_PARTS.length);
+     [explode][move][stop 0 blocks][move][stop 1 blocks]...[move][reassemble]
+
+   During a stop's hold the camera stays on its part and the sub-blocks swipe
+   through one by one. Between stops the outgoing focus falls while the
+   incoming one rises over the same interval, so the camera glides straight
+   from part to part.
+-------------------------------------------------------------------------- */
+
+/** Scroll distance for one sub-block, in vh. About two trackpad swipes. */
+export const BLOCK_VH = 150;
+/** Explode and reassemble ramps, in blocks. */
+const EXPLODE = 0.6;
+/** Camera travel from one part to the next, in blocks. */
+const MOVE = 0.6;
+/** Fraction of a block over which one sub-block hands off to the next. */
+const SWIPE = 0.3;
+
+export type TimelineStop = {
+  /** Focus starts rising here. */
+  riseStart: number;
+  /** Focus reaches 1; first sub-block is centred half a block later. */
+  holdStart: number;
+  /** Last sub-block ends; focus starts falling. */
+  holdEnd: number;
+  /** Focus reaches 0. */
+  fallEnd: number;
+  count: number;
+};
+
+export type Timeline = {
+  /** Total scroll travel, in vh (container height minus the 100vh stage). */
+  travelVh: number;
+  /** Length of one block as a fraction of progress. */
+  blockLen: number;
+  explodeEnd: number;
+  reassembleStart: number;
+  stops: TimelineStop[];
+};
+
+export function buildTimeline(counts: number[]): Timeline {
+  const total =
+    EXPLODE + MOVE + counts.reduce((a, b) => a + b, 0) + MOVE * (counts.length - 1) + MOVE + EXPLODE;
+  const u = (blocks: number) => blocks / total;
+  const stops: TimelineStop[] = [];
+  let t = EXPLODE;
+  for (const count of counts) {
+    stops.push({
+      riseStart: u(t),
+      holdStart: u(t + MOVE),
+      holdEnd: u(t + MOVE + count),
+      fallEnd: u(t + MOVE + count + MOVE),
+      count,
+    });
+    t += MOVE + count;
+  }
+  return {
+    travelVh: total * BLOCK_VH,
+    blockLen: u(1),
+    explodeEnd: u(EXPLODE + MOVE),
+    reassembleStart: u(t),
+    stops,
+  };
+}
+
+export const TIMELINE = buildTimeline(overture.stops.map((stop) => stop.blocks.length));
+
+/** Fraction of the scroll at which each stop's first sub-block is centred. */
+export const STOP_AT = TIMELINE.stops.map((stop) => stop.holdStart + TIMELINE.blockLen / 2);
 
 const clamp01 = (v: number) => Math.min(1, Math.max(0, v));
 const smoothstep = (a: number, b: number, v: number) => {
@@ -92,15 +163,40 @@ const smoothstep = (a: number, b: number, v: number) => {
 
 /** 0 when assembled, 1 when fully exploded. Explodes on the way in, reassembles on the way out. */
 export function explodeAmount(p: number) {
-  return smoothstep(0, 0.16, p) * (1 - smoothstep(0.84, 1, p));
+  return smoothstep(0, TIMELINE.explodeEnd, p) * (1 - smoothstep(TIMELINE.reassembleStart, 1, p));
 }
 
-/** How strongly each stop is in focus at progress p. The bumps never overlap. */
+/**
+ * How strongly each stop is in focus at progress p: a plateau of 1 across the
+ * stop's hold, with smoothstep ramps that crossfade into the neighbours, so
+ * the weights sum to at most 1 and to exactly 1 during a hold or a move.
+ */
 export function focusWeights(p: number) {
-  return STOP_AT.map((t) => {
-    const u = Math.min(1, Math.abs(p - t) / STOP_WIDTH);
-    const w = 1 - u * u;
-    return w * w;
+  return TIMELINE.stops.map(
+    (s) => smoothstep(s.riseStart, s.holdStart, p) * (1 - smoothstep(s.holdEnd, s.fallEnd, p)),
+  );
+}
+
+export type BlockState = {
+  /** Vertical offset in caption heights: +1 waiting below, 0 shown, -1 gone above. */
+  offset: number;
+  opacity: number;
+};
+
+/**
+ * Sub-block positions for one stop at progress p. Block j is fully shown for
+ * the middle of its block; it swipes in from below over SWIPE of a block at
+ * its start and out above at its end. The first block never enters and the
+ * last never exits: the caption's own fade handles those edges.
+ */
+export function blockStates(p: number, stop: number): BlockState[] {
+  const s = TIMELINE.stops[stop];
+  const local = (p - s.holdStart) / TIMELINE.blockLen;
+  const half = SWIPE / 2;
+  return Array.from({ length: s.count }, (_, j) => {
+    const enter = j === 0 ? 1 : smoothstep(j - half, j + half, local);
+    const exit = j === s.count - 1 ? 0 : smoothstep(j + 1 - half, j + 1 + half, local);
+    return { offset: 1 - enter - exit, opacity: enter * (1 - exit) };
   });
 }
 

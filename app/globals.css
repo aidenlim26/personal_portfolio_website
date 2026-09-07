@@ -204,15 +204,6 @@
     text-decoration-thickness: 2px;
   }
 
-  /* A 64px tile for the two raster logos. Each sits inside its own section
-     and nowhere else. The image is the tile; nothing is drawn around it. */
-  .logo-tile {
-    display: block;
-    width: 4rem;
-    height: 4rem;
-    border-radius: 4px;
-    overflow: hidden;
-  }
 }
 
 @layer components {
@@ -224,8 +215,9 @@
      a wide viewport with WebGL and no reduced-motion preference. Native
      scroll throughout: the stage is sticky and nothing is snapped. The drawn
      state trails the scroll position by a short ease, which lives in
-     components/watch-scene.ts. --overture-length sets how much scrolling the
-     whole sequence takes; travel is that minus the 100vh stage.
+     components/watch-scene.ts. --overture-length is set inline from the
+     timeline in lib/watch-parts.ts (100vh stage plus the travel); the value
+     here is only a fallback.
   ------------------------------------------------------------------------- */
   .overture {
     position: relative;
@@ -281,10 +273,21 @@
     color: var(--color-muted);
   }
 
-  .overture-sentence {
-    margin-top: 0.35rem;
-    max-width: 30ch;
+  .overture-blocks {
+    list-style: none;
+    margin: 0.35rem 0 0;
+    padding: 0;
+    display: grid;
+    gap: 0.75rem;
+  }
+
+  .overture-block {
+    max-width: 38ch;
     text-wrap: pretty;
+  }
+
+  .overture-block strong {
+    font-weight: 600;
   }
 
   .overture-caption a {
@@ -301,8 +304,7 @@
   }
 
   .overture[data-mode="scene"] {
-    --overture-length: 900vh;
-    height: var(--overture-length);
+    height: var(--overture-length, 900vh);
   }
 
   .overture[data-mode="scene"] .overture-stage {
@@ -328,8 +330,21 @@
     top: 0;
     left: 0;
     z-index: 2;
-    width: 19rem;
+    width: 24rem;
     opacity: 0;
+  }
+
+  /* Sub-blocks stack in one grid cell so the caption is as tall as its
+     tallest block; the clip lets an outgoing block slide away cleanly. */
+  .overture[data-mode="scene"] .overture-blocks {
+    gap: 0;
+    overflow: hidden;
+  }
+
+  .overture[data-mode="scene"] .overture-block {
+    grid-area: 1 / 1;
+    max-width: none;
+    will-change: transform, opacity;
   }
 
   .overture[data-mode="scene"] .overture-caption[data-active="false"] {

@@ -1,13 +1,9 @@
-import AiClub from "@/components/ai-club";
 import Credentials from "@/components/credentials";
-import EServices from "@/components/e-services";
 import Hero from "@/components/hero";
 import Overture from "@/components/overture";
 import Recognition from "@/components/recognition";
 import SiteFooter from "@/components/site-footer";
 import SiteHeader from "@/components/site-header";
-import Simulator from "@/components/simulator";
-import Timelit from "@/components/timelit";
 
 export default function Home() {
   return (
@@ -24,10 +20,6 @@ export default function Home() {
       <main id="main">
         <Hero />
         <Overture />
-        <AiClub />
-        <Timelit />
-        <Simulator />
-        <EServices />
         <Recognition />
         <Credentials />
       </main>
